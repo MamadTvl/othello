@@ -4,7 +4,7 @@ import {
     hasPlayerLegalMove,
 } from './../othello/Othello';
 import create from 'zustand';
-import { devtools, persist } from 'zustand/middleware';
+import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { flipDiscs } from '../othello/Othello';
 export type Color = 'white' | 'black';
 
@@ -61,14 +61,14 @@ const initialStates: Context = {
         {
             name: '',
             color: 'black',
-            discs: 32,
+            discs: 2,
             isRobot: false,
             legalMoves: [],
         },
         {
             name: '',
             color: 'white',
-            discs: 32,
+            discs: 2,
             isRobot: false,
             legalMoves: [],
         },
@@ -78,83 +78,80 @@ const initialStates: Context = {
 };
 
 export const useOthelloStore = create<Store>()(
-    devtools(
-        persist(
-            (set) => ({
-                ...initialStates,
-                restartGame: () => set(() => initialStates),
-                putDisc: (index, move) => {
-                    set((state) => {
-                        const otherPlayerIndex = index === 0 ? 1 : 0;
-                        let updatedBoard = [...state.board];
-                        const thisPlayer = state.players[index];
-                        const otherPlayer = state.players[otherPlayerIndex];
-                        let turn = state.turn;
-                        const players = [...state.players];
-                        updatedBoard[move[0]][move[1]] = thisPlayer.color;
-                        updatedBoard = flipDiscs(
-                            thisPlayer,
-                            move,
+    persist(
+        (set) => ({
+            ...initialStates,
+            restartGame: () => set(() => initialStates),
+            putDisc: (index, move) => {
+                set((state) => {
+                    const otherPlayerIndex = index === 0 ? 1 : 0;
+                    let updatedBoard = [...state.board];
+                    const thisPlayer = state.players[index];
+                    const otherPlayer = state.players[otherPlayerIndex];
+                    let turn = state.turn;
+                    const players = [...state.players];
+                    updatedBoard[move[0]][move[1]] = thisPlayer.color;
+                    updatedBoard = flipDiscs(thisPlayer, move, updatedBoard);
+                    players[index].legalMoves = getPlayerLegalMoves(
+                        thisPlayer,
+                        updatedBoard,
+                    );
+                    players[otherPlayerIndex].legalMoves = getPlayerLegalMoves(
+                        otherPlayer,
+                        updatedBoard,
+                    );
+                    players[index].discs = getPlayerDiscsCount(
+                        thisPlayer,
+                        updatedBoard,
+                    );
+                    players[otherPlayerIndex].discs = getPlayerDiscsCount(
+                        otherPlayer,
+                        updatedBoard,
+                    );
+                    if (
+                        hasPlayerLegalMove(
+                            players[otherPlayerIndex],
                             updatedBoard,
-                        );
-                        players[index].legalMoves = getPlayerLegalMoves(
-                            thisPlayer,
-                            updatedBoard,
-                        );
-                        players[otherPlayerIndex].legalMoves =
-                            getPlayerLegalMoves(otherPlayer, updatedBoard);
-                        players[index].discs = getPlayerDiscsCount(
-                            thisPlayer,
-                            updatedBoard,
-                        );
-                        players[otherPlayerIndex].discs = getPlayerDiscsCount(
-                            otherPlayer,
-                            updatedBoard,
-                        );
-                        if (
-                            hasPlayerLegalMove(
-                                players[otherPlayerIndex],
-                                updatedBoard,
-                            )
-                        ) {
-                            turn = otherPlayerIndex;
-                        }
+                        )
+                    ) {
+                        turn = otherPlayerIndex;
+                    }
 
-                        return {
-                            board: updatedBoard,
-                            turn,
-                            players,
-                        };
-                    });
-                },
-                updatePlayer: (index, details) =>
-                    set((state) => ({
-                        players: state.players.map((player, i) => ({
-                            ...player,
-                            ...(i === index ? details : {}),
-                        })),
-                    })),
-                gameOver: () => {},
-                startGame: () => {
-                    set((state) => {
-                        return {
-                            players: state.players.map((player) => ({
-                                ...player,
-                                legalMoves: getPlayerLegalMoves(
-                                    player,
-                                    state.board,
-                                ),
-                                discs: getPlayerDiscsCount(player, state.board),
-                            })),
-                            started: true,
-                        };
-                    });
-                },
-                changeMode: (mode) => {},
-            }),
-            {
-                name: 'othello-storage',
+                    return {
+                        board: updatedBoard,
+                        turn,
+                        players,
+                    };
+                });
             },
-        ),
+            updatePlayer: (index, details) =>
+                set((state) => ({
+                    players: state.players.map((player, i) => ({
+                        ...player,
+                        ...(i === index ? details : {}),
+                    })),
+                })),
+            gameOver: () => {},
+            startGame: () => {
+                set((state) => {
+                    return {
+                        players: state.players.map((player) => ({
+                            ...player,
+                            legalMoves: getPlayerLegalMoves(
+                                player,
+                                state.board,
+                            ),
+                            discs: getPlayerDiscsCount(player, state.board),
+                        })),
+                        started: true,
+                    };
+                });
+            },
+            changeMode: (mode) => {},
+        }),
+        {
+            name: 'othello-storage',
+            storage: createJSONStorage(() => sessionStorage)
+        },
     ),
 );

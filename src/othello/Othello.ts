@@ -71,7 +71,7 @@ const canDiscFlip = (
         const column = move[1] + direction[1] * i;
         if (!isValidBlock(row, column) || !board[row][column]) {
             return false;
-        } else if (board[row][column] !== player.color) {
+        } else if (board[row][column] === player.color) {
             break;
         } else {
             i++;
@@ -88,14 +88,16 @@ export const flipDiscs = (
     const updatedBoard = [...board];
     for (const direction of moveDirections) {
         if (canDiscFlip(player, move, direction, updatedBoard)) {
-            let i = 0;
+            let i = 1;
             while (true) {
                 const row = move[0] + direction[0] * i;
                 const column = move[1] + direction[1] * i;
+                console.log(updatedBoard[row][column], [row, column]);
                 if (updatedBoard[row][column] === player.color) {
                     break;
                 } else {
                     updatedBoard[row][column] = player.color;
+                    i++;
                 }
             }
         }
@@ -103,7 +105,10 @@ export const flipDiscs = (
     return updatedBoard;
 };
 
-export const getPlayerDiscsCount = (player: Player, board: Context['board']): number => {
+export const getPlayerDiscsCount = (
+    player: Player,
+    board: Context['board'],
+): number => {
     let count = 0;
     for (const rowBoard of board) {
         for (const item of rowBoard) {
@@ -113,7 +118,7 @@ export const getPlayerDiscsCount = (player: Player, board: Context['board']): nu
         }
     }
     return count;
-}
+};
 
 export const isTheGameOver = (
     players: Player[],
