@@ -3,15 +3,23 @@ import { Theme } from '@mui/system';
 import { useCallback, useEffect, useMemo, useReducer } from 'react';
 import { Color, useOthelloStore } from '../../store';
 
-const TableData = styled('td')({
+const TableData = styled('td')(({ theme }) => ({
     width: 70,
     height: 70,
-});
-export const Disc = styled(ButtonBase)({
+    [theme.breakpoints.down('sm')]: {
+        width: 40,
+        height: 40,
+    },
+}));
+export const Disc = styled(ButtonBase)(({ theme }) => ({
     borderRadius: '50%',
     width: 60,
     height: 60,
-});
+    [theme.breakpoints.down('sm')]: {
+        width: 30,
+        height: 30,
+    },
+}));
 
 const Block: React.FC<BlockProps> = ({ isDisc, color, position }) => {
     const turn = useOthelloStore((store) => store.turn);
