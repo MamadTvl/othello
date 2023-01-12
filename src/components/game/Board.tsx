@@ -1,5 +1,5 @@
 import { Button, styled } from '@mui/material';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useOthelloStore } from '../../store';
 import Block from './Block';
 import GameOverDialog from './GameOverDialog';
