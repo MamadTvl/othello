@@ -43,3 +43,9 @@ body {
     background-color: #f9f9f9;
   }
 }
+
+#source_code {
+  position: fixed;
+  right: 24px; 
+  bottom: 24px;
+}
