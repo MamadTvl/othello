@@ -1,3 +1,4 @@
+import { sleep } from './../utils/index';
 import {
     getPlayerLegalMoves,
     getPlayerDiscsCount,
@@ -7,11 +8,11 @@ import create from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
 import { flipDiscs } from '../othello/Othello';
 export type Color = 'white' | 'black';
-
+export type PlayerType = 'Robot' | 'Human';
 export interface Player {
-    name: string;
+    name: string | null;
     color: Color;
-    isRobot: boolean;
+    type: PlayerType;
     discs: number;
     legalMoves: [number, number][];
 }
@@ -25,19 +26,15 @@ export interface Context {
     gameOvered: boolean;
     turn: number;
     players: Player[];
-    mode: 'robot' | 'friendly';
     started: boolean;
 }
 
 export interface Store extends Context {
     putDisc: (index: number, move: [number, number]) => void;
     updatePlayer: (index: number, details: Partial<Player>) => void;
-    gameOver: () => void;
     restartGame: () => void;
     startGame: () => void;
-    changeMode: (mode: Context['mode']) => void;
-    // todo: start the game
-    // todo: change mode of the game
+    changeMode: (mode: 'Robot' | 'Human', playerId: number) => void;
 }
 
 const getInitialBoard = (): (Color | null)[][] => {
@@ -53,35 +50,39 @@ const getInitialBoard = (): (Color | null)[][] => {
     return board;
 };
 
-const initialStates: Context = {
-    board: getInitialBoard(),
-    gameOvered: false,
-    turn: 0,
-    players: [
-        {
-            name: '',
-            color: 'black',
-            discs: 2,
-            isRobot: false,
-            legalMoves: [],
-        },
-        {
-            name: '',
-            color: 'white',
-            discs: 2,
-            isRobot: false,
-            legalMoves: [],
-        },
-    ],
-    mode: 'friendly',
-    started: false,
+const generateInitialStates = (): Context => {
+    return {
+        board: getInitialBoard(),
+        gameOvered: false,
+        turn: 0,
+        players: [
+            {
+                name: null,
+                color: 'black',
+                discs: 2,
+                type: 'Human',
+                legalMoves: [],
+            },
+            {
+                name: null,
+                color: 'white',
+                discs: 2,
+                type: 'Human',
+                legalMoves: [],
+            },
+        ],
+        started: false,
+    };
 };
 
 export const useOthelloStore = create<Store>()(
     persist(
         (set) => ({
-            ...initialStates,
-            restartGame: () => set(() => initialStates),
+            ...generateInitialStates(),
+            restartGame: () =>
+                set(() => {
+                    return generateInitialStates();
+                }),
             putDisc: (index, move) => {
                 set((state) => {
                     const otherPlayerIndex = index === 0 ? 1 : 0;
@@ -108,6 +109,7 @@ export const useOthelloStore = create<Store>()(
                         otherPlayer,
                         updatedBoard,
                     );
+                    let gameOvered = false;
                     if (
                         hasPlayerLegalMove(
                             players[otherPlayerIndex],
@@ -115,12 +117,17 @@ export const useOthelloStore = create<Store>()(
                         )
                     ) {
                         turn = otherPlayerIndex;
+                    } else if (
+                        !hasPlayerLegalMove(players[index], updatedBoard)
+                    ) {
+                        gameOvered = true;
                     }
 
                     return {
                         board: updatedBoard,
                         turn,
                         players,
+                        gameOvered,
                     };
                 });
             },
@@ -131,7 +138,6 @@ export const useOthelloStore = create<Store>()(
                         ...(i === index ? details : {}),
                     })),
                 })),
-            gameOver: () => {},
             startGame: () => {
                 set((state) => {
                     return {
@@ -147,11 +153,17 @@ export const useOthelloStore = create<Store>()(
                     };
                 });
             },
-            changeMode: (mode) => {},
+            changeMode: (mode, playerId) =>
+                set((state) => ({
+                    players: state.players.map((player, index) => ({
+                        ...player,
+                        ...(index === playerId ? { type: mode } : {}),
+                    })),
+                })),
         }),
         {
             name: 'othello-storage',
-            storage: createJSONStorage(() => sessionStorage)
+            storage: createJSONStorage(() => sessionStorage),
         },
     ),
 );

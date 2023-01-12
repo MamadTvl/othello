@@ -1,13 +1,13 @@
 import { ButtonBase, styled, SxProps } from '@mui/material';
 import { Theme } from '@mui/system';
-import { useCallback, useMemo, useReducer } from 'react';
-import { Color, useOthelloStore } from '../store';
+import { useCallback, useEffect, useMemo, useReducer } from 'react';
+import { Color, useOthelloStore } from '../../store';
 
 const TableData = styled('td')({
     width: 70,
     height: 70,
 });
-const Disc = styled(ButtonBase)({
+export const Disc = styled(ButtonBase)({
     borderRadius: '50%',
     width: 60,
     height: 60,
@@ -38,9 +38,9 @@ const Block: React.FC<BlockProps> = ({ isDisc, color, position }) => {
     }, [color, isDisc, position, turn, players]);
 
     const handleClick = useCallback(() => {
-        if (isDisc) {
+        if (isDisc || players[turn].type === 'Robot') {
             return;
-        } 
+        }
         putDisc(turn, position);
     }, [turn, position, isDisc]);
 

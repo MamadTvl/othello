@@ -92,7 +92,6 @@ export const flipDiscs = (
             while (true) {
                 const row = move[0] + direction[0] * i;
                 const column = move[1] + direction[1] * i;
-                console.log(updatedBoard[row][column], [row, column]);
                 if (updatedBoard[row][column] === player.color) {
                     break;
                 } else {
